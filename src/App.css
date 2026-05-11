@@ -520,6 +520,8 @@ h1 {
 .config-page-section h3 { font-size: 0.9rem; font-weight: 600; margin-bottom: 4px; }
 .config-page-desc { font-size: 0.8rem; color: var(--text-muted); margin-bottom: 10px; line-height: 1.6; }
 
+.sync-msg { font-size: 0.7rem; color: var(--text-muted); margin-bottom: 8px; }
+
 .output-template-label {
   display: block; font-size: 0.7rem; font-weight: 600; color: var(--text-secondary);
   margin-bottom: 4px; margin-top: 10px; text-transform: uppercase; letter-spacing: 0.03em;

@@ -11,6 +11,7 @@ import { ScheduleSetup } from './ScheduleSetup';
 import { SurveyConfigModal } from './SurveyConfigModal';
 import { Metrics } from './Metrics';
 import { requestPermission, sendNotif, registerSW, scheduleNotifications } from './notifications';
+import { initSupabase, isConnected, fullSync } from './supabase';
 import './App.css';
 
 function App() {
@@ -52,8 +53,32 @@ function App() {
   const [showGemini, setShowGemini] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [importMsg, setImportMsg] = useState('');
+  const [syncStatus, setSyncStatus] = useState('off');
+  const [syncMsg, setSyncMsg] = useState('');
 
   useEffect(() => { registerSW(); }, []);
+
+  useEffect(() => {
+    const ok = initSupabase();
+    setSyncStatus(ok ? 'connected' : 'off');
+  }, []);
+
+  useEffect(() => {
+    if (syncStatus !== 'connected' || !classes || !surveys) return;
+    const doAutoSync = async () => {
+      setSyncMsg('Sincronizando...');
+      const r = await fullSync(db, m => setSyncMsg(m));
+      if (r.ok) {
+        setSyncStatus('connected');
+        setSyncMsg(`✅ ${r.pushed} subidos · ${r.pulled} bajados`);
+      } else {
+        setSyncStatus('error');
+        setSyncMsg(`❌ ${r.error || 'Error de sync'}`);
+      }
+    };
+    const timer = setTimeout(doAutoSync, 2000);
+    return () => clearTimeout(timer);
+  }, [syncStatus, classes?.length, surveys?.length]);
 
   useEffect(() => {
     if (!('Notification' in window)) return;
@@ -417,6 +442,27 @@ function App() {
                 onChange={e => updateTemplate('footerTemplate', e.target.value)}
                 rows={3}
               />
+            </div>
+
+            <div className="config-page-section">
+              <h3>☁️ Sincronización en la nube</h3>
+              <p className="config-page-desc">
+                {syncStatus === 'off' && '❌ No configurado — falta .env'}
+                {syncStatus === 'connected' && '✅ Conectado a Supabase'}
+                {syncStatus === 'syncing' && '🔄 Sincronizando...'}
+                {syncStatus === 'error' && '⚠️ Error de conexión'}
+                {syncStatus === 'done' && '✅ Sincronizado'}
+              </p>
+              {syncMsg && <p className="sync-msg">{syncMsg}</p>}
+              <button className="btn btn-primary btn-sm" onClick={async () => {
+                setSyncStatus('syncing');
+                setSyncMsg('Sincronizando...');
+                const r = await fullSync(db, m => setSyncMsg(m));
+                setSyncStatus(r.ok ? 'connected' : 'error');
+                setSyncMsg(r.ok ? `✅ ${r.pushed} subidos · ${r.pulled} bajados` : `❌ ${r.error || 'Error'}`);
+              }} disabled={syncStatus === 'syncing'}>
+                Sync ahora
+              </button>
             </div>
 
             <div className="config-page-section">

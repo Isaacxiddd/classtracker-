@@ -17,6 +17,22 @@ db.version(3).stores({
   topics: '++id, classId, name',
   topicLogs: '++id, topicId, date, count, type, notes'
 });
+db.version(4).stores({
+  classes: '++id, name, dayOfWeek, updatedAt',
+  surveys: '++id, classId, date, updatedAt',
+  config: '++id, key, updatedAt',
+  blocks: '++id, name, dayOfWeek, updatedAt',
+  blockLogs: '++id, blockId, date, updatedAt',
+  summaries: '++id, weekStart, updatedAt',
+  exams: '++id, name, date, updatedAt',
+  topics: '++id, classId, name, updatedAt',
+  topicLogs: '++id, topicId, date, updatedAt'
+});
+
+['classes','surveys','blocks','blockLogs','exams','config','summaries','topics','topicLogs'].forEach(t => {
+  db[t].hook('creating', function (_, obj) { obj.updatedAt = Date.now(); });
+  db[t].hook('updating', function (mod) { mod.updatedAt = Date.now(); return mod; });
+});
 
 export const RATING = { GREEN: 3, YELLOW: 2, RED: 1 };
 export const RATING_LABELS = { 3: 'Bien', 2: 'Regular', 1: 'Mal' };
@@ -80,6 +96,7 @@ export async function getConfig(key, defaults) {
 }
 
 export async function saveConfig(cfg) {
+  cfg.updatedAt = Date.now();
   await db.config.put(cfg);
 }
 
