@@ -10,7 +10,7 @@ import {
 import { ScheduleSetup } from './ScheduleSetup';
 import { SurveyConfigModal } from './SurveyConfigModal';
 import { Metrics } from './Metrics';
-import { requestPermission, sendNotif, registerSW } from './notifications';
+import { requestPermission, sendNotif, registerSW, scheduleNotifications } from './notifications';
 import './App.css';
 
 function App() {
@@ -104,6 +104,11 @@ function App() {
     }, 10000);
     return () => clearInterval(timer);
   }, [currentClass]);
+
+  useEffect(() => {
+    if (!classes?.length || !surveys) return;
+    scheduleNotifications(classes, blocks, surveys, blockLogs);
+  }, [classes, blocks, surveys, blockLogs]);
 
   useEffect(() => {
     if (!classes?.length || !surveys) return;
