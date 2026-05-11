@@ -457,12 +457,12 @@ export async function getTopicStats(classId) {
 }
 
 const SEED_EXAMS = [
-  { name: '1er Parcial SPN', emoji: '💼', date: '2026-06-25', time: '', location: '', notes: '' },
-  { name: '1er Parcial Lógica', emoji: '🧠', date: '2026-07-02', time: '', location: '', notes: '' },
-  { name: '1er Parcial Álgebra', emoji: '📏', date: '2026-07-27', time: '', location: '', notes: '1er día pos vacaciones de invierno' },
-  { name: 'Parcial Arquitectura', emoji: '🖥️', date: '2026-07-27', time: '', location: '', notes: '1er día pos vacaciones de invierno' },
-  { name: '2do Parcial SPN', emoji: '💼', date: '2026-11-12', time: '', location: '', notes: '' },
-  { name: '2do Parcial Álgebra', emoji: '📏', date: '2026-11-18', time: '', location: '', notes: '' },
+  { name: '1er Parcial SPN', emoji: '💼', date: '2026-06-25', time: '', location: '', notes: '', className: 'Sistemas y Procesos de Negocio' },
+  { name: '1er Parcial Lógica', emoji: '🧠', date: '2026-07-02', time: '', location: '', notes: '', className: 'Lógica y Estructuras Discretas' },
+  { name: '1er Parcial Álgebra', emoji: '📏', date: '2026-07-27', time: '', location: '', notes: '1er día pos vacaciones de invierno', className: 'Álgebra y Geometría Analítica' },
+  { name: 'Parcial Arquitectura', emoji: '🖥️', date: '2026-07-27', time: '', location: '', notes: '1er día pos vacaciones de invierno', className: 'Arquitectura de Computadores' },
+  { name: '2do Parcial SPN', emoji: '💼', date: '2026-11-12', time: '', location: '', notes: '', className: 'Sistemas y Procesos de Negocio' },
+  { name: '2do Parcial Álgebra', emoji: '📏', date: '2026-11-18', time: '', location: '', notes: '', className: 'Álgebra y Geometría Analítica' },
 ];
 
 export async function seedIfEmpty() {
@@ -495,8 +495,10 @@ export async function seedIfEmpty() {
     }
     return;
   }
+  const classMap = {};
   for (const c of SEED_CLASSES) {
     const id = await db.classes.add(c);
+    classMap[c.name] = id;
     const seedTopics = SEED_TOPICS_BY_CLASS[c.name];
     if (seedTopics) {
       for (const t of seedTopics) {
@@ -505,7 +507,14 @@ export async function seedIfEmpty() {
     }
   }
   for (const b of SEED_BLOCKS) await db.blocks.add(b);
-  for (const e of SEED_EXAMS) await db.exams.add(e);
+  for (const e of SEED_EXAMS) {
+    const exam = { ...e };
+    if (exam.className) {
+      exam.classId = classMap[exam.className] || null;
+      delete exam.className;
+    }
+    await db.exams.add(exam);
+  }
 }
 
 export async function exportAllData() {

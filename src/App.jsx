@@ -61,33 +61,6 @@ function App() {
   useEffect(() => { registerSW(); }, []);
 
   useEffect(() => {
-    if (!Capacitor.isNativePlatform()) return;
-    LocalNotifications.createChannel({
-      id: 'class-tracker',
-      name: 'Class Tracker',
-      description: 'Recordatorios de clases y sesiones de estudio',
-      importance: 4,
-      visibility: 1,
-    }).catch(() => {});
-    let cancelled = false;
-    (async () => {
-      const handle = await LocalNotifications.addListener('localNotificationActionPerformed', (n) => {
-        if (cancelled) return;
-        const { classId, date } = n.notification.extra || {};
-        if (classId != null && date && classes) {
-          const c = classes.find(cls => cls.id === classId);
-          if (c) {
-            const existing = surveys?.find(s => s.classId === classId && s.date === date);
-            promptSurvey(c, existing || null, date);
-          }
-        }
-      });
-      if (cancelled) handle.remove();
-    })();
-    return () => { cancelled = true; };
-  }, [classes, surveys, promptSurvey]);
-
-  useEffect(() => {
     const ok = initSupabase();
     setSyncStatus(ok ? 'connected' : 'off');
   }, []);
@@ -199,6 +172,33 @@ function App() {
     setSurveyTopicEntries(entries);
     setShowSurvey(true);
   }, []);
+
+  useEffect(() => {
+    if (!Capacitor.isNativePlatform()) return;
+    LocalNotifications.createChannel({
+      id: 'class-tracker',
+      name: 'Class Tracker',
+      description: 'Recordatorios de clases y sesiones de estudio',
+      importance: 4,
+      visibility: 1,
+    }).catch(() => {});
+    let cancelled = false;
+    (async () => {
+      const handle = await LocalNotifications.addListener('localNotificationActionPerformed', (n) => {
+        if (cancelled) return;
+        const { classId, date } = n.notification.extra || {};
+        if (classId != null && date && classes) {
+          const c = classes.find(cls => cls.id === classId);
+          if (c) {
+            const existing = surveys?.find(s => s.classId === classId && s.date === date);
+            promptSurvey(c, existing || null, date);
+          }
+        }
+      });
+      if (cancelled) handle.remove();
+    })();
+    return () => { cancelled = true; };
+  }, [classes, surveys, promptSurvey]);
 
   const openBlockSurvey = (block, log, dateStr) => {
     setBlockSurveyBlock(block);
@@ -366,13 +366,16 @@ function App() {
                     <h3 className="day-header">{DIAS[day.dayNum]}</h3>
                     <span className="day-date">{day.dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
 
-                    {exams?.filter(e => fmtDate(parseISODate(e.date)) === day.dateStr).map(e => (
+                    {exams?.filter(e => fmtDate(parseISODate(e.date)) === day.dateStr).map(e => {
+                      const examClass = classes?.find(c => c.id === e.classId);
+                      return (
                       <div key={e.id} className="day-exam" title={e.notes || e.location || e.name}>
                         <span className="day-exam-emoji">{e.emoji || '📝'}</span>
-                        <span className="day-exam-name">{e.name}</span>
+                        <span className="day-exam-name">{e.name}{examClass ? ` · ${examClass.emoji}` : ''}</span>
                         {e.time && <span className="day-exam-time">{e.time}</span>}
                       </div>
-                    ))}
+                      );
+                    })}
 
                     {day.classes.map(c => (
                       <button key={c.id} className={`day-class ${c.survey ? `rating-${c.survey.rating}` : ''}`}

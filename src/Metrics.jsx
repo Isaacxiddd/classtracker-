@@ -2,15 +2,7 @@ import { useState, useEffect } from 'react';
 import { useLiveQuery } from 'dexie-react-hooks';
 import { db, RATING_COLORS, RATING_LABELS, getMonthMetrics, generateWeekSummary, getMonthLabel, getOutputTemplate, getDaysSinceLastContact, getTopicStats, parseISODate, fmtDate, RATING_ORDER } from './db';
 
-const EXAM_KEYWORDS = {
-  'Análisis Matemático I': [],
-  'Física I': [],
-  'Álgebra y Geometría Analítica': ['Álgebra'],
-  'Lógica y Estructuras Discretas': ['Lógica'],
-  'Sistemas y Procesos de Negocio': ['SPN'],
-  'Algoritmos y Estructura de Datos': [],
-  'Arquitectura de Computadores': ['Arquitectura'],
-};
+
 
 export function Metrics() {
   const classes = useLiveQuery(() => db.classes.toArray());
@@ -51,11 +43,9 @@ export function Metrics() {
   now.setHours(0, 0, 0, 0);
 
   function getExamForClass(c) {
-    const keywords = EXAM_KEYWORDS[c.name] || [];
     const upcoming = exams.filter(e => {
-      const eDate = parseISODate(e.date);
-      if (!eDate || eDate < now) return false;
-      return keywords.length > 0 && keywords.some(k => e.name.includes(k));
+      if (e.classId != null && e.classId !== '') return e.classId === c.id;
+      return false;
     }).sort((a, b) => parseISODate(a.date) - parseISODate(b.date));
     return upcoming[0] || null;
   }

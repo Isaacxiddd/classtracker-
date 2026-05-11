@@ -52,6 +52,7 @@ CREATE TABLE IF NOT EXISTS exams (
   time text NOT NULL DEFAULT '',
   location text NOT NULL DEFAULT '',
   notes text NOT NULL DEFAULT '',
+  class_id bigint DEFAULT NULL,
   updated_at timestamptz DEFAULT now()
 );
 

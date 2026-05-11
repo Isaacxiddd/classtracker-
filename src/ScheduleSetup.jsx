@@ -3,7 +3,7 @@ import { db, DIAS } from './db';
 
 const defaultClass = { name: '', emoji: '📚', dayOfWeek: 1, startTime: '08:00', endTime: '10:00', location: '' };
 const defaultBlock = { name: '', emoji: '📝', dayOfWeek: 1, startTime: '10:00', endTime: '11:00' };
-const defaultExam = { name: '', emoji: '📝', date: '', time: '', location: '', notes: '' };
+const defaultExam = { name: '', emoji: '📝', date: '', time: '', location: '', notes: '', classId: '' };
 
 export function ScheduleSetup({ onComplete, onBack }) {
   const [tab, setTab] = useState('classes');
@@ -54,7 +54,7 @@ export function ScheduleSetup({ onComplete, onBack }) {
     }
     await db.exams.clear();
     for (const e of exams) {
-      if (e.name && e.date) await db.exams.add({ name: e.name, emoji: e.emoji, date: e.date, time: e.time, location: e.location, notes: e.notes });
+      if (e.name && e.date) await db.exams.add({ name: e.name, emoji: e.emoji, date: e.date, time: e.time, location: e.location, notes: e.notes, classId: e.classId || null });
     }
     onComplete?.();
   };
@@ -141,6 +141,10 @@ export function ScheduleSetup({ onComplete, onBack }) {
                 <div className="setup-class-fields">
                   <input placeholder="Nombre" value={e.name} onChange={val => updateList(exams, setExams, i, 'name', val.target.value)} />
                   <input placeholder="Emoji" value={e.emoji} onChange={val => updateList(exams, setExams, i, 'emoji', val.target.value)} className="setup-emoji" />
+                  <select value={e.classId || ''} onChange={val => updateList(exams, setExams, i, 'classId', val ? +val.target.value : '')}>
+                    <option value="">Sin materia</option>
+                    {classes.map(c => <option key={c.id} value={c.id}>{c.emoji} {c.name}</option>)}
+                  </select>
                   <div className="setup-time-group"><label>Fecha</label><input type="date" value={e.date} onChange={val => updateList(exams, setExams, i, 'date', val.target.value)} /></div>
                   <div className="setup-time-group"><label>Hora</label><input type="time" value={e.time} onChange={val => updateList(exams, setExams, i, 'time', val.target.value)} /></div>
                   <input placeholder="Ubicación (opcional)" value={e.location} onChange={val => updateList(exams, setExams, i, 'location', val.target.value)} />
