@@ -496,22 +496,29 @@ export async function seedIfEmpty() {
     const allClasses = await db.classes.toArray();
     const classByName = {};
     for (const c of allClasses) classByName[c.name] = c.id;
-    const allExams = await db.exams.toArray();
-    for (const e of allExams) {
-      if (e.classId) continue;
-      let seed = SEED_EXAMS.find(s => s.date === e.date && (s.name === e.name || e.name.includes(s.name.split(' ').pop())));
-      if (!seed) {
-        for (const [cName, cId] of Object.entries(classByName)) {
-          const words = cName.toLowerCase().split(/\s+/);
-          if (words.some(w => w.length > 2 && e.name.toLowerCase().includes(w))) {
-            await db.exams.update(e.id, { classId: cId });
-            break;
-          }
-        }
-        continue;
+    if ((await db.exams.count()) === 0) {
+      for (const e of SEED_EXAMS) {
+        const exam = { name: e.name, emoji: e.emoji, date: e.date, time: e.time, location: e.location, notes: e.notes };
+        if (e.className && classByName[e.className]) exam.classId = classByName[e.className];
+        await db.exams.add(exam);
       }
-      if (seed.className && classByName[seed.className]) {
-        await db.exams.update(e.id, { classId: classByName[seed.className] });
+    } else {
+      for (const e of await db.exams.toArray()) {
+        if (e.classId) continue;
+        let seed = SEED_EXAMS.find(s => s.date === e.date && (s.name === e.name || e.name.includes(s.name.split(' ').pop())));
+        if (!seed) {
+          for (const [cName, cId] of Object.entries(classByName)) {
+            const words = cName.toLowerCase().split(/\s+/);
+            if (words.some(w => w.length > 2 && e.name.toLowerCase().includes(w))) {
+              await db.exams.update(e.id, { classId: cId });
+              break;
+            }
+          }
+          continue;
+        }
+        if (seed.className && classByName[seed.className]) {
+          await db.exams.update(e.id, { classId: classByName[seed.className] });
+        }
       }
     }
     return;
