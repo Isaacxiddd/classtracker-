@@ -1,8 +1,9 @@
 import { StatusBar } from 'expo-status-bar';
-import { StyleSheet, Text, View, Button, Platform } from 'react-native';
+import { StyleSheet, Text, TextInput, View, Button, Platform, Alert } from 'react-native';
 import * as Notifications from 'expo-notifications';
-import { db, getCurrentMateria, initDB } from './db';
+import { db, getCurrentMateria, initDB, getFirstSync, updateSync, addSync } from './db';
 import { useEffect, useState } from 'react';
+import { initSync, isSyncConnected, fullSync } from './sync';
 
 Notifications.setNotificationHandler({
   handleNotification: async () => ({
@@ -17,12 +18,35 @@ export default function App() {
   const [materiaActual, setMateriaActual] = useState(null);
   const [expandedId, setExpandedId] = useState(null);
   const [datos, setDatos] = useState({});
+  const [syncStatus, setSyncStatus] = useState('off');
+  const [syncMsg, setSyncMsg] = useState('');
 
   useEffect(() => {
     initDB();
     cargarMaterias();
     solicitarPermisos();
+
+    const ok = initSync();
+    setSyncStatus(ok ? 'connected' : 'off');
   }, []);
+
+  useEffect(() => {
+    if (syncStatus !== 'connected') return;
+    const doAutoSync = async () => {
+      setSyncMsg('Sincronizando...');
+      const r = await fullSync(msg => setSyncMsg(msg));
+      if (r.ok) {
+        setSyncStatus('connected');
+        setSyncMsg(`✅ ${r.pushed} subidos · ${r.pulled} bajados`);
+        await cargarMaterias();
+      } else {
+        setSyncStatus('error');
+        setSyncMsg(`❌ ${r.error || 'Error de sync'}`);
+      }
+    };
+    const timer = setTimeout(doAutoSync, 3000);
+    return () => clearTimeout(timer);
+  }, [syncStatus]);
 
   const cargarMaterias = async () => {
     const todas = await db.getAllSync('materias');
@@ -65,17 +89,17 @@ export default function App() {
     }
   };
 
-  const updateDato = (materiaId, campo, valor) => {
+  const updateDato = async (materiaId, campo, valor) => {
     setDatos(prev => ({
       ...prev,
       [materiaId]: { ...prev[materiaId], [campo]: valor }
     }));
     const fecha = new Date().toLocaleDateString('es-ES');
-    const existente = db.getFirstSync('logs', { materiaId, fecha });
+    const existente = await getFirstSync('logs', { materiaId, fecha });
     if (existente) {
-      db.updateSync('logs', existente.id, { [campo]: valor });
+      await updateSync('logs', existente.id, { [campo]: valor });
     } else {
-      db.addSync('logs', {
+      await addSync('logs', {
         materiaId,
         fecha,
         ejercicios: '',
@@ -187,8 +211,29 @@ export default function App() {
         })}
       </View>
 
+      {(syncMsg !== '') && (
+        <Text style={styles.syncMsg}>{syncMsg}</Text>
+      )}
       <View style={styles.footer}>
         <Button title="Generar Output" onPress={generarOutput} />
+        <View style={{ marginTop: 8 }}>
+          <Button
+            title={
+              syncStatus === 'syncing' ? 'Sincronizando...' :
+              syncStatus === 'connected' ? 'Sync manual' :
+              syncStatus === 'error' ? 'Reconectar' : 'Sin conexión'
+            }
+            onPress={async () => {
+              setSyncStatus('syncing');
+              setSyncMsg('Sincronizando...');
+              const r = await fullSync(msg => setSyncMsg(msg));
+              setSyncStatus(r.ok ? 'connected' : 'error');
+              setSyncMsg(r.ok ? `✅ ${r.pushed} subidos · ${r.pulled} bajados` : `❌ ${r.error || 'Error'}`);
+              if (r.ok) await cargarMaterias();
+            }}
+            disabled={syncStatus === 'syncing'}
+          />
+        </View>
       </View>
     </View>
   );
@@ -288,7 +333,13 @@ const styles = StyleSheet.create({
     height: 60,
     textAlignVertical: 'top',
   },
+  syncMsg: {
+    fontSize: 11,
+    color: '#71717a',
+    textAlign: 'center',
+    marginTop: 12,
+  },
   footer: {
-    marginTop: 20,
+    marginTop: 12,
   },
 });
