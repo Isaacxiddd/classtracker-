@@ -499,8 +499,18 @@ export async function seedIfEmpty() {
     const allExams = await db.exams.toArray();
     for (const e of allExams) {
       if (e.classId) continue;
-      const seed = SEED_EXAMS.find(s => s.name === e.name && s.date === e.date);
-      if (seed && seed.className && classByName[seed.className]) {
+      let seed = SEED_EXAMS.find(s => s.date === e.date && (s.name === e.name || e.name.includes(s.name.split(' ').pop())));
+      if (!seed) {
+        for (const [cName, cId] of Object.entries(classByName)) {
+          const words = cName.toLowerCase().split(/\s+/);
+          if (words.some(w => w.length > 2 && e.name.toLowerCase().includes(w))) {
+            await db.exams.update(e.id, { classId: cId });
+            break;
+          }
+        }
+        continue;
+      }
+      if (seed.className && classByName[seed.className]) {
         await db.exams.update(e.id, { classId: classByName[seed.className] });
       }
     }

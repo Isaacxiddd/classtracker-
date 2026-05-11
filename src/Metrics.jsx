@@ -45,7 +45,9 @@ export function Metrics() {
   function getExamForClass(c) {
     const upcoming = exams.filter(e => {
       if (e.classId != null && e.classId !== '') return e.classId === c.id;
-      return false;
+      const cWords = c.name.toLowerCase().split(/\s+/);
+      const eWords = e.name.toLowerCase();
+      return cWords.some(w => w.length > 2 && eWords.includes(w));
     }).sort((a, b) => parseISODate(a.date) - parseISODate(b.date));
     return upcoming[0] || null;
   }

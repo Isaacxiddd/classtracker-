@@ -367,7 +367,11 @@ function App() {
                     <span className="day-date">{day.dateObj.toLocaleDateString('es-ES', { day: 'numeric', month: 'short' })}</span>
 
                     {exams?.filter(e => fmtDate(parseISODate(e.date)) === day.dateStr).map(e => {
-                      const examClass = classes?.find(c => c.id === e.classId);
+                      let examClass = classes?.find(c => c.id === e.classId);
+                      if (!examClass) {
+                        const eLower = e.name.toLowerCase();
+                        examClass = classes?.find(c => c.name.toLowerCase().split(/\s+/).some(w => w.length > 2 && eLower.includes(w)));
+                      }
                       return (
                       <div key={e.id} className="day-exam" title={e.notes || e.location || e.name}>
                         <span className="day-exam-emoji">{e.emoji || '📝'}</span>
