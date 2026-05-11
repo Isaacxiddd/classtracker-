@@ -490,3 +490,44 @@ export async function seedIfEmpty() {
   for (const b of SEED_BLOCKS) await db.blocks.add(b);
   for (const e of SEED_EXAMS) await db.exams.add(e);
 }
+
+export async function exportAllData() {
+  const classes = await db.classes.toArray();
+  const surveys = await db.surveys.toArray();
+  const blocks = await db.blocks.toArray();
+  const blockLogs = await db.blockLogs.toArray();
+  const exams = await db.exams.toArray();
+  const configs = await db.config.toArray();
+  const summaries = await db.summaries.toArray();
+  const topics = await db.topics.toArray();
+  const topicLogs = await db.topicLogs.toArray();
+  return {
+    version: 3,
+    exportedAt: new Date().toISOString(),
+    classes, surveys, blocks, blockLogs, exams, configs, summaries, topics, topicLogs
+  };
+}
+
+export async function importAllData(data) {
+  if (!data || !data.version) throw new Error('Formato de archivo inválido');
+  await db.classes.clear();
+  await db.surveys.clear();
+  await db.blocks.clear();
+  await db.blockLogs.clear();
+  await db.exams.clear();
+  await db.config.clear();
+  await db.summaries.clear();
+  await db.topics.clear();
+  await db.topicLogs.clear();
+  const tables = ['classes', 'surveys', 'blocks', 'blockLogs', 'exams', 'configs', 'summaries', 'topics', 'topicLogs'];
+  for (const t of tables) {
+    const items = data[t];
+    if (items?.length) {
+      const table = t === 'configs' ? db.config : db[t];
+      for (const item of items) {
+        const { id, ...rest } = item;
+        await table.add(rest);
+      }
+    }
+  }
+}

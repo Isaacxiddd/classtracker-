@@ -4,7 +4,7 @@ import {
   db, getCurrentClass, getClassesJustEnded, getOutputTemplate, getConfig, saveConfig,
   getDayColor, toggleBlockDone, getClassesForPeriod, getMonday, addWeeks, fmtDate,
   saveBlockSurvey, DEFAULT_CLASS_SURVEY_CONFIG, DEFAULT_BLOCK_SURVEY_CONFIG, DEFAULT_TEMPLATES,
-  generateGeminiPrompt, seedIfEmpty, parseISODate,
+  generateGeminiPrompt, seedIfEmpty, parseISODate, exportAllData, importAllData,
   RATING_COLORS, RATING_LABELS, RATING_ORDER, DIAS, today, isFuture, getTopicsForClass
 } from './db';
 import { ScheduleSetup } from './ScheduleSetup';
@@ -51,6 +51,7 @@ function App() {
   const [geminiPrompt, setGeminiPrompt] = useState('');
   const [showGemini, setShowGemini] = useState(false);
   const [seeding, setSeeding] = useState(false);
+  const [importMsg, setImportMsg] = useState('');
 
   useEffect(() => { registerSW(); }, []);
 
@@ -416,6 +417,43 @@ function App() {
                 onChange={e => updateTemplate('footerTemplate', e.target.value)}
                 rows={3}
               />
+            </div>
+
+            <div className="config-page-section">
+              <h3>💾 Exportar / Importar datos</h3>
+              <p className="config-page-desc">Respaldo completo de todas las materias, encuestas, temas, bloques y configuración.</p>
+              <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                <button className="btn btn-primary btn-sm" onClick={async () => {
+                  const data = await exportAllData();
+                  const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                  const url = URL.createObjectURL(blob);
+                  const a = document.createElement('a');
+                  a.href = url;
+                  a.download = `class-tracker-backup-${new Date().toISOString().slice(0, 10)}.json`;
+                  a.click();
+                  URL.revokeObjectURL(url);
+                }}>Exportar</button>
+                <label className="btn btn-secondary btn-sm" style={{ cursor: 'pointer' }}>
+                  Importar
+                  <input type="file" accept=".json" style={{ display: 'none' }} onChange={async e => {
+                    const file = e.target.files?.[0];
+                    if (!file) return;
+                    try {
+                      const text = await file.text();
+                      const data = JSON.parse(text);
+                      await importAllData(data);
+                      setImportMsg('✅ Datos importados correctamente');
+                      setTimeout(() => setImportMsg(''), 4000);
+                      window.location.reload();
+                    } catch (err) {
+                      setImportMsg('❌ Error: ' + err.message);
+                      setTimeout(() => setImportMsg(''), 6000);
+                    }
+                    e.target.value = '';
+                  }} />
+                </label>
+              </div>
+              {importMsg && <p style={{ fontSize: '0.75rem', marginTop: 8, color: 'var(--text-secondary)' }}>{importMsg}</p>}
             </div>
           </div>
         )}
