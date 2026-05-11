@@ -23,6 +23,7 @@ export function Metrics() {
   const [preview, setPreview] = useState('');
   const [topicStats, setTopicStats] = useState([]);
   const [expandedClass, setExpandedClass] = useState(null);
+  const [editingTopic, setEditingTopic] = useState(null);
 
   useEffect(() => {
     getOutputTemplate().then(setTemplate);
@@ -75,6 +76,29 @@ export function Metrics() {
       createdAt: new Date().toISOString()
     });
     setPreview(text);
+  };
+
+  const refreshStats = () => {
+    if (classes) {
+      Promise.all(classes.map(c => getTopicStats(c.id))).then(results => {
+        setTopicStats(results.flat());
+      });
+    }
+  };
+
+  const saveTopicCount = async (topicId, val) => {
+    const todayStr = today();
+    const count = Math.max(0, parseInt(val) || 0);
+    const existing = await db.topicLogs.where({ topicId, date: todayStr }).first();
+    if (count > 0) {
+      const data = { topicId, date: todayStr, count, type: 'manual' };
+      if (existing) await db.topicLogs.update(existing.id, data);
+      else await db.topicLogs.add(data);
+    } else if (existing) {
+      await db.topicLogs.delete(existing.id);
+    }
+    setEditingTopic(null);
+    refreshStats();
   };
 
   const copyText = async (text) => {
@@ -155,7 +179,18 @@ export function Metrics() {
                         return (
                           <div key={t.id} className="unified-topic-item">
                             <span className="unified-topic-name">{t.name}</span>
-                            <span className="unified-topic-count">{t.totalCount > 0 ? `${t.totalCount} ej.` : '—'}</span>
+                            {editingTopic?.id === t.id ? (
+                              <input className="unified-topic-edit" type="number" min="0" value={editingTopic.value}
+                                onChange={e => setEditingTopic({ id: t.id, value: e.target.value })}
+                                onBlur={() => saveTopicCount(t.id, editingTopic.value)}
+                                onKeyDown={e => { if (e.key === 'Enter') saveTopicCount(t.id, editingTopic.value); if (e.key === 'Escape') setEditingTopic(null); }}
+                                autoFocus />
+                            ) : (
+                              <span className="unified-topic-count" onClick={e => { e.stopPropagation(); setEditingTopic({ id: t.id, value: t.totalCount }); }}
+                                style={{ cursor: 'pointer', padding: '1px 4px', borderRadius: 'var(--radius-sm)' }}>
+                                {t.totalCount > 0 ? `${t.totalCount} ej.` : '—'}
+                              </span>
+                            )}
                             {lastDate && <span className="unified-topic-date">últ: {lastDate.date}</span>}
                           </div>
                         );

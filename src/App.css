@@ -724,6 +724,13 @@ h1 {
 }
 .unified-topic-name { flex: 1; font-size: 0.7rem; color: var(--text-secondary); }
 .unified-topic-count { font-size: 0.65rem; color: var(--text-muted); white-space: nowrap; }
+.unified-topic-count:hover { background: var(--bg-input); }
+.unified-topic-edit {
+  width: 50px; font-family: 'DM Sans', sans-serif; font-size: 0.65rem;
+  padding: 2px 4px; border: 1px solid var(--accent); border-radius: var(--radius-sm);
+  background: var(--bg-input); color: var(--text-primary); text-align: center;
+}
+.unified-topic-edit:focus { outline: none; box-shadow: 0 0 0 2px var(--accent-glow); }
 .unified-topic-date { font-size: 0.6rem; color: var(--text-muted); white-space: nowrap; }
 .unified-exam-info {
   font-size: 0.7rem; color: #fca5a5; padding: 6px 8px;
