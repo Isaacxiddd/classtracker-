@@ -725,6 +725,11 @@ h1 {
 .unified-topic-name { flex: 1; font-size: 0.7rem; color: var(--text-secondary); }
 .unified-topic-count { font-size: 0.65rem; color: var(--text-muted); white-space: nowrap; }
 .unified-topic-count:hover { background: var(--bg-input); }
+.unified-topic-edit-btn {
+  background: none; border: none; cursor: pointer; font-size: 0.65rem;
+  padding: 2px; opacity: 0.5; transition: opacity 0.15s; line-height: 1;
+}
+.unified-topic-edit-btn:hover { opacity: 1; }
 .unified-topic-edit {
   width: 50px; font-family: 'DM Sans', sans-serif; font-size: 0.65rem;
   padding: 2px 4px; border: 1px solid var(--accent); border-radius: var(--radius-sm);

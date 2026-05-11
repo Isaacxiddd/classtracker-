@@ -77,7 +77,7 @@ function App() {
   }, [blocks]);
 
   useEffect(() => {
-    if (classes && blocks && classes.length === 0 && blocks.length === 0 && !seeding) {
+    if (classes && blocks && !seeding) {
       setSeeding(true);
       seedIfEmpty();
     }

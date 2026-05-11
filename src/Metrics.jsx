@@ -186,11 +186,12 @@ export function Metrics() {
                                 onKeyDown={e => { if (e.key === 'Enter') saveTopicCount(t.id, editingTopic.value); if (e.key === 'Escape') setEditingTopic(null); }}
                                 autoFocus />
                             ) : (
-                              <span className="unified-topic-count" onClick={e => { e.stopPropagation(); setEditingTopic({ id: t.id, value: t.totalCount }); }}
-                                style={{ cursor: 'pointer', padding: '1px 4px', borderRadius: 'var(--radius-sm)' }}>
+                              <span className="unified-topic-count">
                                 {t.totalCount > 0 ? `${t.totalCount} ej.` : '—'}
                               </span>
                             )}
+                            <button className="unified-topic-edit-btn" onClick={e => { e.stopPropagation(); setEditingTopic({ id: t.id, value: t.totalCount }); }}
+                              title="Editar ejercicios">✏️</button>
                             {lastDate && <span className="unified-topic-date">últ: {lastDate.date}</span>}
                           </div>
                         );
