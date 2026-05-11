@@ -457,12 +457,12 @@ export async function getTopicStats(classId) {
 }
 
 const SEED_EXAMS = [
-  { name: '1er Parcial SPN', emoji: '💼', date: '2026-06-25', time: '', location: '', notes: '', className: 'Sistemas y Procesos de Negocio' },
-  { name: '1er Parcial Lógica', emoji: '🧠', date: '2026-07-02', time: '', location: '', notes: '', className: 'Lógica y Estructuras Discretas' },
-  { name: '1er Parcial Álgebra', emoji: '📏', date: '2026-07-27', time: '', location: '', notes: '1er día pos vacaciones de invierno', className: 'Álgebra y Geometría Analítica' },
-  { name: 'Parcial Arquitectura', emoji: '🖥️', date: '2026-07-27', time: '', location: '', notes: '1er día pos vacaciones de invierno', className: 'Arquitectura de Computadores' },
-  { name: '2do Parcial SPN', emoji: '💼', date: '2026-11-12', time: '', location: '', notes: '', className: 'Sistemas y Procesos de Negocio' },
-  { name: '2do Parcial Álgebra', emoji: '📏', date: '2026-11-18', time: '', location: '', notes: '', className: 'Álgebra y Geometría Analítica' },
+  { name: '1° Parcial SPN', emoji: '💼', date: '2026-06-25', time: '', location: '', notes: '', className: 'Sistemas y Procesos de Negocio' },
+  { name: '1° Parcial Lógica', emoji: '🧠', date: '2026-07-02', time: '', location: '', notes: '', className: 'Lógica y Estructuras Discretas' },
+  { name: '1° Parcial Álgebra', emoji: '📏', date: '2026-07-27', time: '', location: '', notes: 'Primer día después de vacaciones de invierno', className: 'Álgebra y Geometría Analítica' },
+  { name: 'Parcial Arquitectura', emoji: '🖥️', date: '2026-07-27', time: '', location: '', notes: 'Primer día después de vacaciones de invierno', className: 'Arquitectura de Computadores' },
+  { name: '2° Parcial SPN', emoji: '💼', date: '2026-11-12', time: '', location: '', notes: '', className: 'Sistemas y Procesos de Negocio' },
+  { name: '2° Parcial Álgebra', emoji: '📏', date: '2026-11-18', time: '', location: '', notes: '', className: 'Álgebra y Geometría Analítica' },
 ];
 
 export async function seedIfEmpty() {
@@ -491,6 +491,17 @@ export async function seedIfEmpty() {
             await db.topics.add({ classId: c.id, name: t });
           }
         }
+      }
+    }
+    const allClasses = await db.classes.toArray();
+    const classByName = {};
+    for (const c of allClasses) classByName[c.name] = c.id;
+    const allExams = await db.exams.toArray();
+    for (const e of allExams) {
+      if (e.classId) continue;
+      const seed = SEED_EXAMS.find(s => s.name === e.name && s.date === e.date);
+      if (seed && seed.className && classByName[seed.className]) {
+        await db.exams.update(e.id, { classId: classByName[seed.className] });
       }
     }
     return;
