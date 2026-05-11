@@ -42,13 +42,13 @@ export async function initDB() {
     );
     const carpetaId = res.lastInsertRowId;
     const materias = [
-      ['Analisis Matematico I', '📘', 1, '08:30', '12:30', 'Campus', 0],
-      ['Fisica I', '🍎', 2, '08:30', '12:30', 'Campus', 1],
-      ['Algebra y Geometria Analitica', '➕✖️', 3, '08:30', '12:30', 'Campus', 2],
-      ['Logica y Estructuras Discretas', '∑', 4, '07:45', '10:00', 'Medrano', 3],
-      ['Sistemas y Procesos de Negocio', '💼', 4, '10:15', '12:30', 'Medrano', 4],
-      ['Algoritmos y Estructura de Datos', '🖥️', 5, '08:30', '12:30', 'Campus', 5],
-      ['Arquitectura de Computadores', '🧠', 6, '07:45', '11:00', 'Medrano', 6],
+      ['Análisis Matemático I', '📐', 1, '08:30', '12:30', '', 0],
+      ['Física I', '⚛️', 2, '14:00', '17:00', 'Particular Lugano', 1],
+      ['Álgebra y Geometría Analítica', '📏', 3, '08:30', '12:30', '', 2],
+      ['Lógica y Estructuras Discretas', '🧠', 4, '08:30', '10:15', '', 3],
+      ['Sistemas y Procesos de Negocio', '💼', 4, '10:30', '12:30', '', 4],
+      ['Algoritmos y Estructura de Datos', '💻', 5, '08:30', '12:30', '', 5],
+      ['Arquitectura de Computadores', '🖥️', 6, '08:30', '12:30', '', 6],
     ];
     for (const [nombre, emoji, dia, hi, hf, ubi, orden] of materias) {
       await db.runAsync(
