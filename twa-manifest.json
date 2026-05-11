@@ -1,0 +1,18 @@
+{
+  "packageName": "com.classtracker.app",
+  "host": "localhost",
+  "fallbackType": "customtabs",
+  "launchUrl": "/",
+  "name": "Class Tracker",
+  "shortName": "Tracker",
+  "display": "standalone",
+  "orientation": "portrait",
+  "appVersionCode": 1,
+  "appVersionName": "1.0.0",
+  "signing": {
+    "keystore": null,
+    "alias": "android",
+    "password": null,
+    "keyPassword": null
+  }
+}
