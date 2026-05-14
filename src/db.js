@@ -562,6 +562,77 @@ export async function exportAllData() {
   };
 }
 
+export async function repairOrphanedData() {
+  const classes = await db.classes.toArray();
+  const classById = {};
+  const classByName = {};
+  for (const c of classes) {
+    classById[c.id] = c;
+    classByName[c.name] = c;
+  }
+
+  const classesByDay = {};
+  for (const c of classes) {
+    if (!classesByDay[c.dayOfWeek]) classesByDay[c.dayOfWeek] = [];
+    classesByDay[c.dayOfWeek].push(c);
+  }
+
+  let repairedSurveys = 0, repairedTopics = 0, repairedExams = 0;
+
+  const surveys = await db.surveys.toArray();
+  for (const s of surveys) {
+    if (classById[s.classId]) continue;
+    const parts = s.date.split('/');
+    if (parts.length < 3) continue;
+    const dateObj = new Date(+parts[2], +parts[1] - 1, +parts[0]);
+    const dayOfWeek = dateObj.getDay();
+    const adjustedDay = dayOfWeek === 0 ? 7 : dayOfWeek;
+    const dayClasses = classesByDay[adjustedDay] || [];
+    if (dayClasses.length === 1) {
+      await db.surveys.update(s.id, { classId: dayClasses[0].id });
+      repairedSurveys++;
+    } else if (dayClasses.length > 1 && s.extra?.['Tema de clase']) {
+      const topicName = s.extra['Tema de clase'];
+      for (const c of dayClasses) {
+        const seedTopics = SEED_TOPICS_BY_CLASS[c.name];
+        if (seedTopics?.includes(topicName)) {
+          await db.surveys.update(s.id, { classId: c.id });
+          repairedSurveys++;
+          break;
+        }
+      }
+    }
+  }
+
+  const topics = await db.topics.toArray();
+  for (const t of topics) {
+    if (classById[t.classId]) continue;
+    for (const [className, seedTopics] of Object.entries(SEED_TOPICS_BY_CLASS)) {
+      if (seedTopics.includes(t.name) && classByName[className]) {
+        await db.topics.update(t.id, { classId: classByName[className].id });
+        repairedTopics++;
+        break;
+      }
+    }
+  }
+
+  const exams = await db.exams.toArray();
+  for (const e of exams) {
+    if (classById[e.classId]) continue;
+    const eLower = e.name.toLowerCase();
+    for (const c of classes) {
+      const words = c.name.toLowerCase().split(/\s+/);
+      if (words.some(w => w.length > 2 && eLower.includes(w))) {
+        await db.exams.update(e.id, { classId: c.id });
+        repairedExams++;
+        break;
+      }
+    }
+  }
+
+  return { repairedSurveys, repairedTopics, repairedExams };
+}
+
 export async function importAllData(data) {
   if (!data || !data.version) throw new Error('Formato de archivo inválido');
   await db.classes.clear();

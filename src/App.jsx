@@ -4,7 +4,7 @@ import {
   db, getCurrentClass, getClassesJustEnded, getOutputTemplate, getConfig, saveConfig,
   getDayColor, toggleBlockDone, getClassesForPeriod, getMonday, addWeeks, fmtDate,
   saveBlockSurvey, DEFAULT_CLASS_SURVEY_CONFIG, DEFAULT_BLOCK_SURVEY_CONFIG, DEFAULT_TEMPLATES,
-  generateGeminiPrompt, seedIfEmpty, parseISODate, exportAllData, importAllData,
+  generateGeminiPrompt, seedIfEmpty, parseISODate, exportAllData, importAllData, repairOrphanedData,
   RATING_COLORS, RATING_LABELS, RATING_ORDER, DIAS, today, isFuture, getTopicsForClass
 } from './db';
 import { ScheduleSetup } from './ScheduleSetup';
@@ -55,6 +55,7 @@ function App() {
   const [showGemini, setShowGemini] = useState(false);
   const [seeding, setSeeding] = useState(false);
   const [importMsg, setImportMsg] = useState('');
+  const [repairMsg, setRepairMsg] = useState('');
   const [syncStatus, setSyncStatus] = useState('off');
   const [syncMsg, setSyncMsg] = useState('');
 
@@ -536,6 +537,18 @@ function App() {
                 </label>
               </div>
               {importMsg && <p style={{ fontSize: '0.75rem', marginTop: 8, color: 'var(--text-secondary)' }}>{importMsg}</p>}
+            </div>
+
+            <div className="config-page-section">
+              <h3>🔧 Reparar datos</h3>
+              <p className="config-page-desc">Si las encuestas o temas perdieron la referencia a sus materias (por el bug anterior al guardar horario), esto los re-vincula automáticamente.</p>
+              <button className="btn btn-primary btn-sm" onClick={async () => {
+                setRepairMsg('Reparando...');
+                const r = await repairOrphanedData();
+                setRepairMsg(`✅ ${r.repairedSurveys} encuestas · ${r.repairedTopics} temas · ${r.repairedExams} exámenes reparados`);
+                setTimeout(() => setRepairMsg(''), 6000);
+              }}>Reparar</button>
+              {repairMsg && <p style={{ fontSize: '0.75rem', marginTop: 8, color: 'var(--text-secondary)' }}>{repairMsg}</p>}
             </div>
           </div>
         )}
