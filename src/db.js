@@ -563,6 +563,54 @@ export async function exportAllData() {
 }
 
 export async function repairOrphanedData() {
+  let removed = { classes: 0, blocks: 0, exams: 0, topics: 0 };
+
+  const allClasses = await db.classes.toArray();
+  const seenNames = new Set();
+  for (const c of allClasses) {
+    if (seenNames.has(c.name)) {
+      await db.classes.delete(c.id);
+      removed.classes++;
+    } else {
+      seenNames.add(c.name);
+    }
+  }
+
+  const allBlocks = await db.blocks.toArray();
+  const seenBlockNames = new Set();
+  for (const b of allBlocks) {
+    if (seenBlockNames.has(b.name)) {
+      await db.blocks.delete(b.id);
+      removed.blocks++;
+    } else {
+      seenBlockNames.add(b.name);
+    }
+  }
+
+  const allExams = await db.exams.toArray();
+  const seenExamKeys = new Set();
+  for (const e of allExams) {
+    const key = e.name + '|' + e.date;
+    if (seenExamKeys.has(key)) {
+      await db.exams.delete(e.id);
+      removed.exams++;
+    } else {
+      seenExamKeys.add(key);
+    }
+  }
+
+  const allTopics = await db.topics.toArray();
+  const seenTopicKeys = new Set();
+  for (const t of allTopics) {
+    const key = t.classId + '|' + t.name;
+    if (seenTopicKeys.has(key)) {
+      await db.topics.delete(t.id);
+      removed.topics++;
+    } else {
+      seenTopicKeys.add(key);
+    }
+  }
+
   const classes = await db.classes.toArray();
   const classById = {};
   const classByName = {};
@@ -630,7 +678,7 @@ export async function repairOrphanedData() {
     }
   }
 
-  return { repairedSurveys, repairedTopics, repairedExams };
+  return { removed, repairedSurveys, repairedTopics, repairedExams };
 }
 
 export async function importAllData(data) {

@@ -545,7 +545,14 @@ function App() {
               <button className="btn btn-primary btn-sm" onClick={async () => {
                 setRepairMsg('Reparando...');
                 const r = await repairOrphanedData();
-                setRepairMsg(`✅ ${r.repairedSurveys} encuestas · ${r.repairedTopics} temas · ${r.repairedExams} exámenes reparados`);
+                const rem = r.removed;
+                const parts = [];
+                if (rem.classes) parts.push(`${rem.classes} materias duplicadas`);
+                if (rem.blocks) parts.push(`${rem.blocks} bloques duplicados`);
+                if (rem.exams) parts.push(`${rem.exams} exámenes duplicados`);
+                if (rem.topics) parts.push(`${rem.topics} temas duplicados`);
+                const dedupMsg = parts.length ? '🗑️ Eliminados: ' + parts.join(' · ') + '. ' : '';
+                setRepairMsg(`${dedupMsg}✅ ${r.repairedSurveys} encuestas · ${r.repairedTopics} temas · ${r.repairedExams} exámenes reparados`);
                 setTimeout(() => setRepairMsg(''), 6000);
               }}>Reparar</button>
               {repairMsg && <p style={{ fontSize: '0.75rem', marginTop: 8, color: 'var(--text-secondary)' }}>{repairMsg}</p>}

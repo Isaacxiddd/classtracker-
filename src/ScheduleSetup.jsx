@@ -44,40 +44,40 @@ export function ScheduleSetup({ onComplete, onBack }) {
   };
 
   const save = async () => {
+    const dedupedClasses = [...new Map(classes.filter(c => c.name).map(c => [c.name, c])).values()];
     const existingClasses = await db.classes.toArray();
     const existingIds = existingClasses.map(c => c.id);
-    const keepIds = classes.filter(c => c.id).map(c => c.id);
+    const keepIds = dedupedClasses.filter(c => c.id).map(c => c.id);
     for (const id of existingIds) {
       if (!keepIds.includes(id)) await db.classes.delete(id);
     }
-    for (const c of classes) {
-      if (!c.name) continue;
+    for (const c of dedupedClasses) {
       const data = { name: c.name, emoji: c.emoji, dayOfWeek: c.dayOfWeek, startTime: c.startTime, endTime: c.endTime, location: c.location };
       if (c.id) await db.classes.update(c.id, data);
       else await db.classes.add(data);
     }
 
+    const dedupedBlocks = [...new Map(blocks.filter(b => b.name).map(b => [b.name, b])).values()];
     const existingBlocks = await db.blocks.toArray();
     const existingBlockIds = existingBlocks.map(b => b.id);
-    const keepBlockIds = blocks.filter(b => b.id).map(b => b.id);
+    const keepBlockIds = dedupedBlocks.filter(b => b.id).map(b => b.id);
     for (const id of existingBlockIds) {
       if (!keepBlockIds.includes(id)) await db.blocks.delete(id);
     }
-    for (const b of blocks) {
-      if (!b.name) continue;
+    for (const b of dedupedBlocks) {
       const data = { name: b.name, emoji: b.emoji, dayOfWeek: b.dayOfWeek, startTime: b.startTime, endTime: b.endTime };
       if (b.id) await db.blocks.update(b.id, data);
       else await db.blocks.add(data);
     }
 
+    const dedupedExams = [...new Map(exams.filter(e => e.name && e.date).map(e => [e.name + '|' + e.date, e])).values()];
     const existingExams = await db.exams.toArray();
     const existingExamIds = existingExams.map(e => e.id);
-    const keepExamIds = exams.filter(e => e.id).map(e => e.id);
+    const keepExamIds = dedupedExams.filter(e => e.id).map(e => e.id);
     for (const id of existingExamIds) {
       if (!keepExamIds.includes(id)) await db.exams.delete(id);
     }
-    for (const e of exams) {
-      if (!e.name || !e.date) continue;
+    for (const e of dedupedExams) {
       const data = { name: e.name, emoji: e.emoji, date: e.date, time: e.time, location: e.location, notes: e.notes, classId: e.classId || null };
       if (e.id) await db.exams.update(e.id, data);
       else await db.exams.add(data);
