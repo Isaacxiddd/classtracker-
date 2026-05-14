@@ -44,17 +44,43 @@ export function ScheduleSetup({ onComplete, onBack }) {
   };
 
   const save = async () => {
-    await db.classes.clear();
+    const existingClasses = await db.classes.toArray();
+    const existingIds = existingClasses.map(c => c.id);
+    const keepIds = classes.filter(c => c.id).map(c => c.id);
+    for (const id of existingIds) {
+      if (!keepIds.includes(id)) await db.classes.delete(id);
+    }
     for (const c of classes) {
-      if (c.name) await db.classes.add({ name: c.name, emoji: c.emoji, dayOfWeek: c.dayOfWeek, startTime: c.startTime, endTime: c.endTime, location: c.location });
+      if (!c.name) continue;
+      const data = { name: c.name, emoji: c.emoji, dayOfWeek: c.dayOfWeek, startTime: c.startTime, endTime: c.endTime, location: c.location };
+      if (c.id) await db.classes.update(c.id, data);
+      else await db.classes.add(data);
     }
-    await db.blocks.clear();
+
+    const existingBlocks = await db.blocks.toArray();
+    const existingBlockIds = existingBlocks.map(b => b.id);
+    const keepBlockIds = blocks.filter(b => b.id).map(b => b.id);
+    for (const id of existingBlockIds) {
+      if (!keepBlockIds.includes(id)) await db.blocks.delete(id);
+    }
     for (const b of blocks) {
-      if (b.name) await db.blocks.add({ name: b.name, emoji: b.emoji, dayOfWeek: b.dayOfWeek, startTime: b.startTime, endTime: b.endTime });
+      if (!b.name) continue;
+      const data = { name: b.name, emoji: b.emoji, dayOfWeek: b.dayOfWeek, startTime: b.startTime, endTime: b.endTime };
+      if (b.id) await db.blocks.update(b.id, data);
+      else await db.blocks.add(data);
     }
-    await db.exams.clear();
+
+    const existingExams = await db.exams.toArray();
+    const existingExamIds = existingExams.map(e => e.id);
+    const keepExamIds = exams.filter(e => e.id).map(e => e.id);
+    for (const id of existingExamIds) {
+      if (!keepExamIds.includes(id)) await db.exams.delete(id);
+    }
     for (const e of exams) {
-      if (e.name && e.date) await db.exams.add({ name: e.name, emoji: e.emoji, date: e.date, time: e.time, location: e.location, notes: e.notes, classId: e.classId || null });
+      if (!e.name || !e.date) continue;
+      const data = { name: e.name, emoji: e.emoji, date: e.date, time: e.time, location: e.location, notes: e.notes, classId: e.classId || null };
+      if (e.id) await db.exams.update(e.id, data);
+      else await db.exams.add(data);
     }
     onComplete?.();
   };
