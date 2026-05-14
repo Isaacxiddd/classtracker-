@@ -611,6 +611,12 @@ export async function repairOrphanedData() {
     }
   }
 
+  const syncRecords = await db.config.where({ key: 'lastSync' }).toArray();
+  if (syncRecords.length > 1) {
+    const [first, ...rest] = syncRecords.sort((a, b) => a.id - b.id);
+    for (const r of rest) await db.config.delete(r.id);
+  }
+
   const classes = await db.classes.toArray();
   const classById = {};
   const classByName = {};

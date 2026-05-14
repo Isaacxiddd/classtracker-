@@ -105,7 +105,8 @@ export async function pushTable(db, tableName) {
   const { error } = await client.from(supTable).upsert(batch, { onConflict: 'id' });
   if (error) return { ok: false, error: error.message };
 
-  await db.config.put({ id: undefined, key: 'lastSync', value: Date.now() });
+  const existingSync = await db.config.get({ key: 'lastSync' });
+  await db.config.put({ id: existingSync?.id, key: 'lastSync', value: Date.now(), updatedAt: Date.now() });
   return { ok: true, count: records.length };
 }
 
@@ -164,6 +165,7 @@ export async function fullSync(db, onProgress) {
   onProgress?.(`${push.total} registros subidos. Descargando cambios remotos...`);
   const pull = await pullAll(db);
 
-  await db.config.put({ id: undefined, key: 'lastSync', value: Date.now() });
+  const existingSync = await db.config.get({ key: 'lastSync' });
+  await db.config.put({ id: existingSync?.id, key: 'lastSync', value: Date.now(), updatedAt: Date.now() });
   return { ok: true, pushed: push.total, pulled: pull.total, errors: [...push.errors, ...pull.errors].filter(Boolean) };
 }
