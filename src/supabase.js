@@ -62,8 +62,6 @@ function toRemote(rec) {
   }
   delete r.updatedAt;
   r.updated_at = new Date().toISOString();
-  if (r.extra && typeof r.extra === 'object') r.extra = JSON.stringify(r.extra);
-  if (r.value && typeof r.value === 'object') r.value = JSON.stringify(r.value);
   return r;
 }
 

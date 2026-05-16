@@ -58,6 +58,12 @@ function App() {
   const [repairMsg, setRepairMsg] = useState('');
   const [syncStatus, setSyncStatus] = useState('off');
   const [syncMsg, setSyncMsg] = useState('');
+  const syncAfterSave = useCallback(async () => {
+    if (syncStatus !== 'connected') return;
+    setSyncMsg('Sincronizando...');
+    const r = await fullSync(db, m => setSyncMsg(m));
+    setSyncMsg(r.ok ? `✅ ${r.pushed} subidos · ${r.pulled} bajados` : `⚠️ ${r.error || 'Error de sync'}`);
+  }, [syncStatus]);
 
   useEffect(() => { registerSW(); }, []);
 
@@ -67,20 +73,22 @@ function App() {
   }, []);
 
   useEffect(() => {
-    if (syncStatus !== 'connected' || !classes || !surveys) return;
+    if (!classes || !surveys) return;
+    if (syncStatus !== 'connected') return;
+    let cancelled = false;
     const doAutoSync = async () => {
       setSyncMsg('Sincronizando...');
       const r = await fullSync(db, m => setSyncMsg(m));
+      if (cancelled) return;
       if (r.ok) {
-        setSyncStatus('connected');
         setSyncMsg(`✅ ${r.pushed} subidos · ${r.pulled} bajados`);
       } else {
-        setSyncStatus('error');
-        setSyncMsg(`❌ ${r.error || 'Error de sync'}`);
+        setSyncMsg(`⚠️ ${r.error || 'Error de sync'}`);
       }
     };
     const timer = setTimeout(doAutoSync, 2000);
-    return () => clearTimeout(timer);
+    const interval = setInterval(doAutoSync, 30000);
+    return () => { cancelled = true; clearTimeout(timer); clearInterval(interval); };
   }, [syncStatus, classes?.length, surveys?.length]);
 
   useEffect(() => {
@@ -220,6 +228,7 @@ function App() {
       });
     }
     await saveBlockSurvey(blockSurveyBlock.id, blockSurveyDate, extra, blockSurveyConfig?.notesEnabled ? blockSurveyNotes : '');
+    syncAfterSave();
     setShowBlockSurvey(false);
     setBlockSurveyBlock(null);
     setBlockSurveyLogId(null);
@@ -261,6 +270,7 @@ function App() {
         await db.topicLogs.delete(existingLog.id);
       }
     }
+    syncAfterSave();
     setShowSurvey(false);
     setSurveyExisting(null);
   };
@@ -268,6 +278,7 @@ function App() {
   const handleToggleBlock = async (blockId, currentlyDone, dateStr) => {
     const newDone = !currentlyDone;
     await toggleBlockDone(blockId, newDone, dateStr || today());
+    syncAfterSave();
     if (newDone) {
       const log = await db.blockLogs.where({ blockId, date: dateStr }).first();
       const hasData = log?.extra && Object.values(log.extra).some(v => v);
